@@ -46,4 +46,4 @@ app.post("/class", (request, response) => {
     });
 });
 
-export const api = functions.https.onRequest(app);
+export const api = functions.region("southamerica-east1").https.onRequest(app);
