@@ -5,11 +5,6 @@ import { Class } from "../src/model/types";
 
 admin.initializeApp();
 
-export const helloWorld = functions.https.onRequest((request, response) => {
-  functions.logger.info("Hello logs!", { structuredData: true });
-  response.send("Hello from Firebase!");
-});
-
 export const getClasses = functions.https.onRequest((request, response) => {
   admin
     .firestore()
@@ -23,4 +18,32 @@ export const getClasses = functions.https.onRequest((request, response) => {
       return response.json(classes);
     })
     .catch((err) => console.error(err));
+});
+
+export const createClasses = functions.https.onRequest((request, response) => {
+  switch (request.method) {
+    case "POST":
+      const newClass: Class = {
+        name: request.body.name,
+        subject: request.body.subject,
+        professor: request.body.professor,
+      };
+
+      admin
+        .firestore()
+        .collection("classes")
+        .add(newClass)
+        .then((doc) => {
+          response.json({ message: `Class ${doc.id} created successfully` });
+        })
+        .catch((err) => {
+          console.error(err);
+          response.status(500).json({ error: "Something went wrong." });
+        });
+      break;
+
+    default:
+      response.status(400).json({ error: "Method not allowed. " });
+      break;
+  }
 });
