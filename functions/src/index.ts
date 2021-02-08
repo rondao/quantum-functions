@@ -16,7 +16,10 @@ app.get("/classes", (request, response) => {
     .then((data) => {
       let classes = <Class[]>[];
       data.forEach((doc) => {
-        classes.push(doc.data() as Class);
+        classes.push({
+          id: doc.id,
+          ...(doc.data() as Class),
+        });
       });
       return response.json(classes);
     })
