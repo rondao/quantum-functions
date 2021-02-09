@@ -27,13 +27,15 @@ app.post("/signup", (request, response) => {
     .auth()
     .createUserWithEmailAndPassword(newUser.email, newUser.password)
     .then((data) => {
-      return response
-        .status(201)
-        .json({ message: `User ${data.user?.uid} signed up successfully` });
+      return data.user?.getIdToken();
+    })
+    .then((token) => {
+      return response.status(201).json({ token });
     })
     .catch((err) => {
       console.error(err);
-      return response.status(500).json({ error: err.code });
+      response.status(err.code === "auth/email-already-in-use" ? 400 : 500);
+      return response.json({ error: err.code });
     });
 });
 
