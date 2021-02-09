@@ -21,58 +21,59 @@ firebase.initializeApp({
 const database = admin.firestore();
 const app = express();
 
-app.post("/signup", (request, response) => {
+app.post("/signup", async (request, response) => {
   const newUser = request.body as Signup;
-  firebase
-    .auth()
-    .createUserWithEmailAndPassword(newUser.email, newUser.password)
-    .then((data) => {
-      return data.user?.getIdToken();
-    })
-    .then((token) => {
-      return response.status(201).json({ token });
-    })
-    .catch((err) => {
-      console.error(err);
-      response.status(err.code === "auth/email-already-in-use" ? 400 : 500);
-      return response.json({ error: err.code });
-    });
+
+  try {
+    const authData = await firebase
+      .auth()
+      .createUserWithEmailAndPassword(newUser.email, newUser.password);
+    const authToken = await authData.user?.getIdToken();
+
+    return response.status(201).json({ authToken });
+  } catch (err) {
+    console.error(err);
+
+    response.status(err.code === "auth/email-already-in-use" ? 400 : 500);
+    return response.json({ error: err.code });
+  }
 });
 
-app.get("/classes", (request, response) => {
-  database
-    .collection("classes")
-    .get()
-    .then((data) => {
-      let classes = <Class[]>[];
-      data.forEach((doc) => {
-        classes.push({
-          id: doc.id,
-          ...(doc.data() as Class),
-        });
+app.get("/classes", async (request, response) => {
+  try {
+    const queryData = await database.collection("classes").get();
+
+    let classes = <Class[]>[];
+    queryData.forEach((doc) => {
+      classes.push({
+        id: doc.id,
+        ...(doc.data() as Class),
       });
-      return response.json(classes);
-    })
-    .catch((err) => console.error(err));
+    });
+
+    return response.json(classes);
+  } catch (err) {
+    console.error(err);
+    return response.status(500).json({ error: err });
+  }
 });
 
-app.post("/class", (request, response) => {
+app.post("/class", async (request, response) => {
   const newClass: Class = {
     name: request.body.name,
     subject: request.body.subject,
     professor: request.body.professor,
   };
 
-  database
-    .collection("classes")
-    .add(newClass)
-    .then((doc) => {
-      return response.json({ message: `Class ${doc.id} created successfully` });
-    })
-    .catch((err) => {
-      console.error(err);
-      return response.status(500).json({ error: "Something went wrong." });
+  try {
+    const document = await database.collection("classes").add(newClass);
+    return response.json({
+      message: `Class ${document.id} created successfully`,
     });
+  } catch (err) {
+    console.error(err);
+    return response.status(500).json({ error: "Something went wrong." });
+  }
 });
 
 export const api = functions.region("southamerica-east1").https.onRequest(app);
