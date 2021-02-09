@@ -18,6 +18,7 @@ firebase.initializeApp({
   measurementId: "G-5TEV0K2FSD",
 });
 
+const database = admin.firestore();
 const app = express();
 
 app.post("/signup", (request, response) => {
@@ -37,8 +38,7 @@ app.post("/signup", (request, response) => {
 });
 
 app.get("/classes", (request, response) => {
-  admin
-    .firestore()
+  database
     .collection("classes")
     .get()
     .then((data) => {
@@ -61,8 +61,7 @@ app.post("/class", (request, response) => {
     professor: request.body.professor,
   };
 
-  admin
-    .firestore()
+  database
     .collection("classes")
     .add(newClass)
     .then((doc) => {
