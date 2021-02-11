@@ -4,7 +4,7 @@ import firebase from "firebase";
 
 import * as express from "express";
 
-import { Class, Signup } from "../src/model/types";
+import { SignUp, SignIn, Class } from "../src/model/types";
 
 admin.initializeApp();
 firebase.initializeApp({
@@ -22,19 +22,37 @@ const database = admin.firestore();
 const app = express();
 
 app.post("/signup", async (request, response) => {
-  const newUser = request.body as Signup;
+  const signUp = request.body as SignUp;
 
   try {
-    const authData = await firebase
+    const userCredentials = await firebase
       .auth()
-      .createUserWithEmailAndPassword(newUser.email, newUser.password);
-    const authToken = await authData.user?.getIdToken();
+      .createUserWithEmailAndPassword(signUp.email, signUp.password);
+    const authToken = await userCredentials.user?.getIdToken();
 
     return response.status(201).json({ authToken });
   } catch (err) {
     console.error(err);
 
-    response.status(err.code === "auth/email-already-in-use" ? 400 : 500);
+    response.status(err.code === "auth/internal-error" ? 500 : 400);
+    return response.json({ error: err.code });
+  }
+});
+
+app.post("/signin", async (request, response) => {
+  const signIn = request.body as SignIn;
+
+  try {
+    const userCredentials = await firebase
+      .auth()
+      .signInWithEmailAndPassword(signIn.email, signIn.password);
+    const authToken = await userCredentials.user?.getIdToken();
+
+    return response.status(201).json({ authToken });
+  } catch (err) {
+    console.error(err);
+
+    response.status(err.code === "auth/internal-error" ? 500 : 400);
     return response.json({ error: err.code });
   }
 });
