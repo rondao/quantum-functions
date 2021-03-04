@@ -19,7 +19,10 @@ firebase.initializeApp({
 });
 
 const database = admin.firestore();
-const app = express();
+
+export const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 app.post("/signup", async (request, response) => {
   const signUp = request.body as SignUp;
