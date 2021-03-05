@@ -103,6 +103,11 @@ describe("Test /class endpoint.", () => {
       .expect({ error: "Something went wrong." });
     done();
   });
+
+  test("Get at class endpoint.", async (done) => {
+    await request(app).get("/class").expect(404);
+    done();
+  });
 });
 
 afterEach(async (done) => {
