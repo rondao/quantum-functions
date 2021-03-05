@@ -55,13 +55,38 @@ describe("Test /classes endpoint.", () => {
       );
       done();
     });
-
-    afterEach(async (done) => {
-      const documents = await database.collection("classes").get();
-      for (const doc of documents.docs) {
-        await database.collection("classes").doc(doc.id).delete();
-      }
-      done();
-    });
   });
+});
+
+describe("Test /class endpoint.", () => {
+  const testData: Class = {
+    name: "Class 1",
+    subject: "Subject 1",
+    professor: "Professor 1",
+  };
+
+  test("Post a class.", async (done) => {
+    const res = await request(app)
+      .post("/class")
+      .send(testData)
+      .set("Accept", "application/json")
+      .expect("Content-Type", /json/)
+      .expect(200);
+
+    const id = RegExp("Class (?<id>\\w+) created successfully").exec(
+      res.body.message
+    )?.groups?.id;
+    const dbData = await database.collection("classes").doc(id!).get();
+
+    expect(testData).toEqual(expect.objectContaining(dbData.data()));
+    done();
+  });
+});
+
+afterEach(async (done) => {
+  const documents = await database.collection("classes").get();
+  for (const doc of documents.docs) {
+    await database.collection("classes").doc(doc.id).delete();
+  }
+  done();
 });
