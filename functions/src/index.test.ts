@@ -1,13 +1,15 @@
 import * as firebaseFunctionTest from "firebase-functions-test";
 import * as admin from "firebase-admin";
 import * as request from "supertest";
+import firebase from "firebase";
 
 firebaseFunctionTest({ projectId: "quantum-c5194" });
 
 import { app } from "./index";
-import { Class } from "../src/model/types";
+import { Class, SignUp } from "../src/model/types";
 
 const database = admin.firestore();
+firebase.auth().useEmulator("http://localhost:9099");
 
 describe("Test /classes endpoint.", () => {
   test("Get all classes when empty.", async (done) => {
@@ -111,6 +113,27 @@ describe("Test /class endpoint.", () => {
 
   test("Get at class endpoint.", async (done) => {
     await request(app).get("/class").expect(404);
+    done();
+  });
+});
+
+describe("Test /signup endpoint.", () => {
+  const testData: SignUp = {
+    email: "email@test.com",
+    password: "password",
+    confirmPassword: "password",
+    name: "name",
+  };
+
+  test("Post a signup.", async (done) => {
+    const res = await request(app)
+      .post("/signup")
+      .send(testData)
+      .set("Accept", "application/json")
+      .expect("Content-Type", /json/)
+      .expect(201);
+
+    expect(res.body).toHaveProperty("authToken");
     done();
   });
 });
