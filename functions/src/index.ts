@@ -35,8 +35,6 @@ app.post("/signup", async (request, response) => {
 
     return response.status(201).json({ authToken });
   } catch (err) {
-    console.error(err);
-
     response.status(err.code === "auth/internal-error" ? 500 : 400);
     return response.json({ error: err.code });
   }
@@ -53,8 +51,6 @@ app.post("/signin", async (request, response) => {
 
     return response.status(201).json({ authToken });
   } catch (err) {
-    console.error(err);
-
     response.status(err.code === "auth/internal-error" ? 500 : 400);
     return response.json({ error: err.code });
   }
@@ -74,7 +70,6 @@ app.get("/classes", async (request, response) => {
 
     return response.json(classes);
   } catch (err) {
-    console.error(err);
     return response.status(500).json({ error: err });
   }
 });
@@ -92,7 +87,6 @@ app.post("/class", async (request, response) => {
       message: `Class ${document.id} created successfully`,
     });
   } catch (err) {
-    console.error(err);
     return response.status(500).json({ error: "Something went wrong." });
   }
 });
