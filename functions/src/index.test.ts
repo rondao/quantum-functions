@@ -18,6 +18,11 @@ describe("Test /classes endpoint.", () => {
     done();
   });
 
+  test("Post at class endpoint.", async (done) => {
+    await request(app).post("/class").expect(500);
+    done();
+  });
+
   describe("Test with pre-registered classes.", () => {
     const testData: Class[] = [
       {
