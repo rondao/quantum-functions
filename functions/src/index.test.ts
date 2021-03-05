@@ -94,6 +94,15 @@ describe("Test /class endpoint.", () => {
       .expect({ error: "Something went wrong." });
     done();
   });
+
+  test("Post an empty class.", async (done) => {
+    await request(app)
+      .post("/class")
+      .send({})
+      .expect(500)
+      .expect({ error: "Something went wrong." });
+    done();
+  });
 });
 
 afterEach(async (done) => {
