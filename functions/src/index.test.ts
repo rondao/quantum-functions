@@ -64,6 +64,10 @@ describe("Test /class endpoint.", () => {
     subject: "Subject 1",
     professor: "Professor 1",
   };
+  const malformedTestData = {
+    not_name: "Not Class 1",
+    subject: "Subject 1",
+  };
 
   test("Post a class.", async (done) => {
     const res = await request(app)
@@ -79,6 +83,15 @@ describe("Test /class endpoint.", () => {
     const dbData = await database.collection("classes").doc(id!).get();
 
     expect(testData).toEqual(expect.objectContaining(dbData.data()));
+    done();
+  });
+
+  test("Post a malformed class.", async (done) => {
+    await request(app)
+      .post("/class")
+      .send(malformedTestData)
+      .expect(500)
+      .expect({ error: "Something went wrong." });
     done();
   });
 });
