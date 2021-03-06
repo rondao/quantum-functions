@@ -168,6 +168,11 @@ describe("Test /signup endpoint.", () => {
     done();
   });
 
+  test("When Get the endpoint, expect code 404.", async (done) => {
+    await request(app).get("/class").expect(404);
+    done();
+  });
+
   afterAll(async (done) => {
     const users = [
       await admin.auth().getUserByEmail(newAccountData.email),
@@ -219,6 +224,11 @@ describe("Test /signup endpoint.", () => {
       .expect("Content-Type", /json/)
       .expect(400)
       .expect({ error: "auth/wrong-password" });
+    done();
+  });
+
+  test("When Get the endpoint, expect code 404.", async (done) => {
+    await request(app).get("/class").expect(404);
     done();
   });
 
