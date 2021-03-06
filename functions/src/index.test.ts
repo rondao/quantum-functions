@@ -118,23 +118,31 @@ describe("Test /class endpoint.", () => {
 });
 
 describe("Test /signup endpoint.", () => {
-  const testData: SignUp = {
-    email: "email@test.com",
+  const newAccountData: SignUp = {
+    email: "new_account@test.com",
     password: "password",
-    confirmPassword: "password",
     name: "name",
   };
-  const incorrectPasswordData: SignUp = {
-    email: "email@test.com",
+  const existingAccountData: SignUp = {
+    email: "existing_account@test.com",
     password: "password",
-    confirmPassword: "Not the same password",
     name: "name",
   };
 
-  test("Post a signup.", async (done) => {
+  beforeAll(async (done) => {
+    await firebase
+      .auth()
+      .createUserWithEmailAndPassword(
+        existingAccountData.email,
+        existingAccountData.password
+      );
+    done();
+  });
+
+  test("Post a signup to register a new account.", async (done) => {
     const res = await request(app)
       .post("/signup")
-      .send(testData)
+      .send(newAccountData)
       .set("Accept", "application/json")
       .expect("Content-Type", /json/)
       .expect(201);
@@ -143,13 +151,23 @@ describe("Test /signup endpoint.", () => {
     done();
   });
 
-  test("Post an invalid email.", async (done) => {
+  test("Post a signup for an existing account.", async (done) => {
     await request(app)
       .post("/signup")
-      .send(incorrectPasswordData)
+      .send(existingAccountData)
       .set("Accept", "application/json")
       .expect("Content-Type", /json/)
-      .expect(400);
+      .expect(400)
+      .expect({ error: "auth/email-already-in-use" });
+    done();
+  });
+
+  afterAll(async (done) => {
+    const users = [
+      await admin.auth().getUserByEmail(newAccountData.email),
+      await admin.auth().getUserByEmail(existingAccountData.email),
+    ];
+    await admin.auth().deleteUsers(users.map((user) => user.uid));
     done();
   });
 });
