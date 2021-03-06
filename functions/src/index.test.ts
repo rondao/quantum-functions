@@ -124,6 +124,12 @@ describe("Test /signup endpoint.", () => {
     confirmPassword: "password",
     name: "name",
   };
+  const incorrectPasswordData: SignUp = {
+    email: "email@test.com",
+    password: "password",
+    confirmPassword: "Not the same password",
+    name: "name",
+  };
 
   test("Post a signup.", async (done) => {
     const res = await request(app)
@@ -134,6 +140,16 @@ describe("Test /signup endpoint.", () => {
       .expect(201);
 
     expect(res.body).toHaveProperty("authToken");
+    done();
+  });
+
+  test("Post an invalid email.", async (done) => {
+    await request(app)
+      .post("/signup")
+      .send(incorrectPasswordData)
+      .set("Accept", "application/json")
+      .expect("Content-Type", /json/)
+      .expect(400);
     done();
   });
 });
