@@ -6,7 +6,7 @@ import firebase from "firebase";
 firebaseFunctionTest({ projectId: "quantum-c5194" });
 
 import { app } from "./index";
-import { Class, SignUp } from "../src/model/types";
+import { Class, SignUp, SignIn } from "../src/model/types";
 
 const database = admin.firestore();
 firebase.auth().useEmulator("http://localhost:9099");
@@ -173,10 +173,9 @@ describe("Test /signup endpoint.", () => {
 });
 
 describe("Test /signup endpoint.", () => {
-  const existingAccountData: SignUp = {
+  const existingAccountData: SignIn = {
     email: "existing_account@test.com",
     password: "password",
-    name: "name",
   };
 
   beforeAll(async (done) => {
@@ -198,6 +197,22 @@ describe("Test /signup endpoint.", () => {
       .expect(201);
 
     expect(res.body).toHaveProperty("authToken");
+    done();
+  });
+
+  test("Post a signin with incorrect password.", async (done) => {
+    const incorrectPasswordData: SignIn = {
+      ...existingAccountData,
+      password: "Incorrect Password",
+    };
+
+    await request(app)
+      .post("/signin")
+      .send(incorrectPasswordData)
+      .set("Accept", "application/json")
+      .expect("Content-Type", /json/)
+      .expect(400)
+      .expect({ error: "auth/wrong-password" });
     done();
   });
 
