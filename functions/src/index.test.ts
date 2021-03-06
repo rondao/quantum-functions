@@ -172,6 +172,44 @@ describe("Test /signup endpoint.", () => {
   });
 });
 
+describe("Test /signup endpoint.", () => {
+  const existingAccountData: SignUp = {
+    email: "existing_account@test.com",
+    password: "password",
+    name: "name",
+  };
+
+  beforeAll(async (done) => {
+    await firebase
+      .auth()
+      .createUserWithEmailAndPassword(
+        existingAccountData.email,
+        existingAccountData.password
+      );
+    done();
+  });
+
+  test("Post a signin.", async (done) => {
+    const res = await request(app)
+      .post("/signin")
+      .send(existingAccountData)
+      .set("Accept", "application/json")
+      .expect("Content-Type", /json/)
+      .expect(201);
+
+    expect(res.body).toHaveProperty("authToken");
+    done();
+  });
+
+  afterAll(async (done) => {
+    const users = [
+      await admin.auth().getUserByEmail(existingAccountData.email),
+    ];
+    await admin.auth().deleteUsers(users.map((user) => user.uid));
+    done();
+  });
+});
+
 afterEach(async (done) => {
   const documents = await database.collection("classes").get();
   for (const doc of documents.docs) {
