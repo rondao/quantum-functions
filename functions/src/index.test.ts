@@ -12,7 +12,52 @@ const database = admin.firestore();
 firebase.auth().useEmulator("http://localhost:9099");
 
 describe("Test /classes endpoint.", () => {
-  test("Get all classes when empty.", async (done) => {
+  const testData: Class[] = [
+    {
+      name: "Class 1",
+      subject: "Subject 1",
+      professor: "Professor 1",
+    },
+    {
+      name: "Class 2",
+      subject: "Subject 2",
+      professor: "Professor 2",
+    },
+    {
+      name: "Class 2",
+      subject: "Subject 3",
+      professor: "Professor 1",
+    },
+  ];
+
+  beforeAll(async (done) => {
+    for (const doc of testData) {
+      await database.collection("classes").add(doc);
+    }
+    done();
+  });
+
+  afterEach(async (done) => {
+    const documents = await database.collection("classes").get();
+    for (const doc of documents.docs) {
+      await database.collection("classes").doc(doc.id).delete();
+    }
+    done();
+  });
+
+  test("Given classes are registered, when Get the endpoint, expect all classes.", async (done) => {
+    const res = await request(app).get("/classes").expect(200);
+
+    expect(res.body).toHaveLength(testData.length);
+    expect(res.body).toEqual(
+      expect.arrayContaining(
+        testData.map((data) => expect.objectContaining(data))
+      )
+    );
+    done();
+  });
+
+  test("Given no classes are registered, when Get the endpoint, expect empty array.", async (done) => {
     const res = await request(app).get("/classes").expect(200);
 
     expect(res.body).toHaveLength(0);
@@ -20,66 +65,27 @@ describe("Test /classes endpoint.", () => {
     done();
   });
 
-  test("Post at class endpoint.", async (done) => {
+  test("When Post the endpoint, expect code 500", async (done) => {
     await request(app).post("/class").expect(500);
     done();
-  });
-
-  describe("Test with pre-registered classes.", () => {
-    const testData: Class[] = [
-      {
-        name: "Class 1",
-        subject: "Subject 1",
-        professor: "Professor 1",
-      },
-      {
-        name: "Class 2",
-        subject: "Subject 2",
-        professor: "Professor 2",
-      },
-      {
-        name: "Class 2",
-        subject: "Subject 3",
-        professor: "Professor 1",
-      },
-    ];
-
-    beforeAll(async (done) => {
-      for (const doc of testData) {
-        await database.collection("classes").add(doc);
-      }
-      done();
-    });
-
-    test("Get all classes.", async (done) => {
-      const res = await request(app).get("/classes").expect(200);
-
-      expect(res.body).toHaveLength(testData.length);
-      expect(res.body).toEqual(
-        expect.arrayContaining(
-          testData.map((data) => expect.objectContaining(data))
-        )
-      );
-      done();
-    });
   });
 });
 
 describe("Test /class endpoint.", () => {
-  const testData: Class = {
+  const classData: Class = {
     name: "Class 1",
     subject: "Subject 1",
     professor: "Professor 1",
   };
-  const malformedTestData = {
+  const malformedData = {
     not_name: "Not Class 1",
     subject: "Subject 1",
   };
 
-  test("Post a class.", async (done) => {
+  test("When Post Class data, expect registration id.", async (done) => {
     const res = await request(app)
       .post("/class")
-      .send(testData)
+      .send(classData)
       .set("Accept", "application/json")
       .expect("Content-Type", /json/)
       .expect(200);
@@ -89,20 +95,20 @@ describe("Test /class endpoint.", () => {
     )?.groups?.id;
     const dbData = await database.collection("classes").doc(id!).get();
 
-    expect(testData).toEqual(expect.objectContaining(dbData.data()));
+    expect(classData).toEqual(expect.objectContaining(dbData.data()));
     done();
   });
 
-  test("Post a malformed class.", async (done) => {
+  test("When Post malformed Class data, expect code 500.", async (done) => {
     await request(app)
       .post("/class")
-      .send(malformedTestData)
+      .send(malformedData)
       .expect(500)
       .expect({ error: "Something went wrong." });
     done();
   });
 
-  test("Post an empty class.", async (done) => {
+  test("When Post empty data, expect code 500.", async (done) => {
     await request(app)
       .post("/class")
       .send({})
@@ -111,7 +117,7 @@ describe("Test /class endpoint.", () => {
     done();
   });
 
-  test("Get at class endpoint.", async (done) => {
+  test("When Get the endpoint, expect code 404.", async (done) => {
     await request(app).get("/class").expect(404);
     done();
   });
@@ -139,7 +145,7 @@ describe("Test /signup endpoint.", () => {
     done();
   });
 
-  test("Post a signup to register a new account.", async (done) => {
+  test("When Post SignUp data, expect authToken returned.", async (done) => {
     const res = await request(app)
       .post("/signup")
       .send(newAccountData)
@@ -151,7 +157,7 @@ describe("Test /signup endpoint.", () => {
     done();
   });
 
-  test("Post a signup for an existing account.", async (done) => {
+  test("Given an email account is already registered, when Post same email data, expect code 400.", async (done) => {
     await request(app)
       .post("/signup")
       .send(existingAccountData)
@@ -188,7 +194,7 @@ describe("Test /signup endpoint.", () => {
     done();
   });
 
-  test("Post a signin.", async (done) => {
+  test("Given an existing account, when Post correct SignIn data, expect authToken.", async (done) => {
     const res = await request(app)
       .post("/signin")
       .send(existingAccountData)
@@ -200,7 +206,7 @@ describe("Test /signup endpoint.", () => {
     done();
   });
 
-  test("Post a signin with incorrect password.", async (done) => {
+  test("Given an existing account, when Post incorrect password, expect error 400.", async (done) => {
     const incorrectPasswordData: SignIn = {
       ...existingAccountData,
       password: "Incorrect Password",
@@ -223,12 +229,4 @@ describe("Test /signup endpoint.", () => {
     await admin.auth().deleteUsers(users.map((user) => user.uid));
     done();
   });
-});
-
-afterEach(async (done) => {
-  const documents = await database.collection("classes").get();
-  for (const doc of documents.docs) {
-    await database.collection("classes").doc(doc.id).delete();
-  }
-  done();
 });
