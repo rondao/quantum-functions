@@ -6,7 +6,7 @@ import firebase from "firebase";
 firebaseFunctionTest({ projectId: "quantum-c5194" });
 
 import { app } from "./index";
-import { Class, SignUp, SignIn } from "../src/model/types";
+import { Class, Professor, SignIn, SignUp } from "../src/model/types";
 
 const database = admin.firestore();
 firebase.auth().useEmulator("http://localhost:9099");
@@ -65,8 +65,8 @@ describe("Test /classes endpoint.", () => {
     done();
   });
 
-  test("When Post the endpoint, expect code 500", async (done) => {
-    await request(app).post("/class").expect(500);
+  test("When Post the endpoint, expect code 404", async (done) => {
+    await request(app).post("/classes").expect(404);
     done();
   });
 });
@@ -119,6 +119,114 @@ describe("Test /class endpoint.", () => {
 
   test("When Get the endpoint, expect code 404.", async (done) => {
     await request(app).get("/class").expect(404);
+    done();
+  });
+});
+
+describe("Test /professors endpoint.", () => {
+  const testData: Professor[] = [
+    {
+      name: "Professor 1",
+      bio: "Bio 1",
+    },
+    {
+      name: "Professor 2",
+      bio: "Bio 2",
+    },
+    {
+      name: "Professor 3",
+      bio: "Bio 3",
+    },
+  ];
+
+  beforeAll(async (done) => {
+    for (const doc of testData) {
+      await database.collection("professors").add(doc);
+    }
+    done();
+  });
+
+  afterEach(async (done) => {
+    const documents = await database.collection("professors").get();
+    for (const doc of documents.docs) {
+      await database.collection("professors").doc(doc.id).delete();
+    }
+    done();
+  });
+
+  test("Given professors are registered, when Get the endpoint, expect all professors.", async (done) => {
+    const res = await request(app).get("/professors").expect(200);
+
+    expect(res.body).toHaveLength(testData.length);
+    expect(res.body).toEqual(
+      expect.arrayContaining(
+        testData.map((data) => expect.objectContaining(data))
+      )
+    );
+    done();
+  });
+
+  test("Given no professors are registered, when Get the endpoint, expect empty array.", async (done) => {
+    const res = await request(app).get("/professors").expect(200);
+
+    expect(res.body).toHaveLength(0);
+    expect(res.body).toEqual([]);
+    done();
+  });
+
+  test("When Post the endpoint, expect code 404", async (done) => {
+    await request(app).post("/professors").expect(404);
+    done();
+  });
+});
+
+describe("Test /professor endpoint.", () => {
+  const professorData: Professor = {
+    name: "Professor 1",
+    bio: "Bio 1",
+  };
+  const malformedData = {
+    not_name: "Not Professor 1",
+    bio: "Bio 1",
+  };
+
+  test("When Post Professor data, expect registration id.", async (done) => {
+    const res = await request(app)
+      .post("/professor")
+      .send(professorData)
+      .set("Accept", "application/json")
+      .expect("Content-Type", /json/)
+      .expect(200);
+
+    const id = RegExp("Professor (?<id>\\w+) created successfully").exec(
+      res.body.message
+    )?.groups?.id;
+    const dbData = await database.collection("professors").doc(id!).get();
+
+    expect(professorData).toEqual(expect.objectContaining(dbData.data()));
+    done();
+  });
+
+  test("When Post malformed Professor data, expect code 500.", async (done) => {
+    await request(app)
+      .post("/professor")
+      .send(malformedData)
+      .expect(500)
+      .expect({ error: "Something went wrong." });
+    done();
+  });
+
+  test("When Post empty data, expect code 500.", async (done) => {
+    await request(app)
+      .post("/professor")
+      .send({})
+      .expect(500)
+      .expect({ error: "Something went wrong." });
+    done();
+  });
+
+  test("When Get the endpoint, expect code 404.", async (done) => {
+    await request(app).get("/professor").expect(404);
     done();
   });
 });

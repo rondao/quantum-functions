@@ -4,7 +4,7 @@ import firebase from "firebase";
 
 import * as express from "express";
 
-import { SignUp, SignIn, Class } from "../src/model/types";
+import { Class, Professor, SignIn, SignUp } from "../src/model/types";
 
 admin.initializeApp();
 firebase.initializeApp({
@@ -85,6 +85,40 @@ app.post("/class", async (request, response) => {
     const document = await database.collection("classes").add(newClass);
     return response.json({
       message: `Class ${document.id} created successfully`,
+    });
+  } catch (err) {
+    return response.status(500).json({ error: "Something went wrong." });
+  }
+});
+
+app.get("/professors", async (request, response) => {
+  try {
+    const queryData = await database.collection("professors").get();
+
+    let professor = <Professor[]>[];
+    queryData.forEach((doc) => {
+      professor.push({
+        id: doc.id,
+        ...(doc.data() as Professor),
+      });
+    });
+
+    return response.json(professor);
+  } catch (err) {
+    return response.status(500).json({ error: err });
+  }
+});
+
+app.post("/professor", async (request, response) => {
+  const newProfessor: Professor = {
+    name: request.body.name,
+    bio: request.body.bio,
+  };
+
+  try {
+    const document = await database.collection("professors").add(newProfessor);
+    return response.json({
+      message: `Professor ${document.id} created successfully`,
     });
   } catch (err) {
     return response.status(500).json({ error: "Something went wrong." });

@@ -15,3 +15,9 @@ export interface Class {
   subject: string;
   professor: string;
 }
+
+export interface Professor {
+  id?: string;
+  name: string;
+  bio: string;
+}
